@@ -311,7 +311,7 @@ class WalletCommand(BaseCommand):
         BaseCommand.__init__(self, 'wallet')
 
     def execute(self, core, params):
-        currency = core.exchange_handle.get_currency(params['currency'])
+        currency = core.exchange_handle.get_currency(str(params['currency']).upper())
         price = core.coin_db.get_currency_price(currency.code)
         wallet = core.exchange_handle.get_wallet(currency.code)
         make_price = lambda i: utils.make_price_string(
@@ -578,6 +578,8 @@ the market <base-currency>/<market-currency>.
 If the amount given is "max" then all of the coins in the wallet
 for <market-currency> will be put in the order.
 
+Amount could be given as percentage of total coins available in your wallet use 10% for example
+
 <rate> can be an expression. The "market" and "ask" constants can
 be used which will contain the latest market and ask prices in this
 market.''',
@@ -588,7 +590,11 @@ sell BTC XLM amount 100 rate 1.10 * ask
 
 Another example, selling all of our units of ETH at 1 BTC each:
 
-{0} BTC ETH amount max rate 1'''
+sell BTC ETH amount max rate 1
+
+Example using percentage of available amount:
+
+sell BTC XLM amount 50% rate 1.1 * ask'''
     }
 
     def __init__(self):
@@ -598,6 +604,16 @@ Another example, selling all of our units of ETH at 1 BTC each:
         wallet = core.exchange_handle.get_wallet(currency_code)
         if amount == 'max':
             amount = wallet.available
+        elif str(amount).endswith('%'):
+            try:
+                percentage = int(amount[:-1])
+            except ValueError:
+                raise CommandExecutionException('{0} is not a valid percentage'.format(amount))
+                return None
+            if (percentage > 100) or (percentage <= 0):
+                raise CommandExecutionException('{0} is not a valid percentage'.format(percentage))
+                return None
+            amount = (float(percentage) / 100) * wallet.available
         else:
             amount = float(amount)
         if amount > wallet.available:
@@ -678,6 +694,8 @@ the market <base-currency>/<market-currency>.
 If the amount given is "max" then all of the coins in the wallet
 for <base-currency> will be put in the order.
 
+Amount could be given as percentage of total available in your wallet, 10% for example, where 100% equals to max
+
 <rate> can be an expression. The "market" and "bid" constants can
 be used which will contain the latest market and bid prices in
 this market.''',
@@ -688,7 +706,11 @@ buy BTC XLM amount 100 rate 0.9 * bid
 
 Another example, buying all of our units of ETH at 1 BTC each:
 
-{0} BTC ETH amount max rate 1'''
+buy BTC ETH amount max rate 1
+
+Example using percentage of available amount:
+
+buy BTC XLM amount 50% rate 0.9 * bid'''
     }
 
     def __init__(self):
@@ -698,17 +720,27 @@ Another example, buying all of our units of ETH at 1 BTC each:
         wallet = core.exchange_handle.get_wallet(currency_code)
         if amount == 'max':
             amount = wallet.available / rate
+        elif str(amount).endswith('%'):
+            try:
+                percentage = int(amount[:-1])
+            except ValueError:
+                raise CommandExecutionException('{0} is not a valid percentage'.format(amount))
+                return None
+            if (percentage > 100) or (percentage <= 0):
+                raise CommandExecutionException('{0} is not a valid percentage'.format(percentage))
+                return None
+            amount = ((float(percentage) / 100) * wallet.available) / rate
         else:
             amount = float(amount)
-            if amount > wallet.available:
-                if wallet.available == 0:
-                    raise CommandExecutionException('{0} wallet is empty'.format(currency_code))
-                else:
-                    raise CommandExecutionException('Wallet only contains {0} {1}'.format(
+        if amount > wallet.available:
+            if wallet.available == 0:
+                raise CommandExecutionException('{0} wallet is empty'.format(currency_code))
+            else:
+                raise CommandExecutionException('Wallet only contains {0} {1}'.format(
                         utils.format_float(wallet.available),
                         currency_code
                     ))
-                return None
+            return None
         return amount
 
     def execute(self, core, params):
