@@ -311,7 +311,7 @@ class WalletCommand(BaseCommand):
         BaseCommand.__init__(self, 'wallet')
 
     def execute(self, core, params):
-        currency = core.exchange_handle.get_currency(str(params['currency']).upper())
+        currency = core.exchange_handle.get_currency(params['currency'])
         price = core.coin_db.get_currency_price(currency.code)
         wallet = core.exchange_handle.get_wallet(currency.code)
         make_price = lambda i: utils.make_price_string(
@@ -586,15 +586,15 @@ market.''',
         'examples' : '''Sell 100 units of XLM at 10% more than what the latest ask
 price is in the BTC market:
 
-sell BTC XLM amount 100 rate 1.10 * ask
+{0} BTC XLM amount 100 rate 1.10 * ask
 
 Another example, selling all of our units of ETH at 1 BTC each:
 
-sell BTC ETH amount max rate 1
+{0} BTC ETH amount max rate 1
 
 Example using percentage of available amount:
 
-sell BTC XLM amount 50% rate 1.1 * ask'''
+{0} BTC XLM amount 50% rate 1.1 * ask'''
     }
 
     def __init__(self):
@@ -702,15 +702,15 @@ this market.''',
         'examples' : '''Buy 100 units of XLM at 90% of what the latest bid
 price in the BTC market:
 
-buy BTC XLM amount 100 rate 0.9 * bid
+{0} BTC XLM amount 100 rate 0.9 * bid
 
 Another example, buying all of our units of ETH at 1 BTC each:
 
-buy BTC ETH amount max rate 1
+{0} BTC ETH amount max rate 1
 
 Example using percentage of available amount:
 
-buy BTC XLM amount 50% rate 0.9 * bid'''
+{0} BTC XLM amount 50% rate 0.9 * bid'''
     }
 
     def __init__(self):
